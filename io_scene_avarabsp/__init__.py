@@ -1,11 +1,14 @@
 """
 avarabsp
 """
-
+import math
 import bpy
+import re
+import json
 from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty
 from bpy_extras.io_utils import ExportHelper
-from . import export_avarabsp
+from functools import reduce
+from mathutils import Vector
 
 bl_info = {  # pylint: disable=invalid-name
     "name": "Avarabsp Exporter",
@@ -40,8 +43,9 @@ class ExportAvarabsp(bpy.types.Operator, ExportHelper):
             if not self.filepath:
                 raise Exception("filepath not set")
 
-            return export_avarabsp.save(self, context)
+            return save(self.filepath, context)
         except:
+            raise
             self.report({'ERROR'}, "failed")
             return {'CANCELLED'}
 
@@ -61,6 +65,69 @@ def unregister():
     """Remove addon from blender"""
     bpy.utils.unregister_class(ExportAvarabsp)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func)
+
+
+def save(filepath, context):
+
+    for key, obj in bpy.data.objects.items():
+        if obj.type == "MESH":
+            print(f"export the {key}")
+            bounds = [Vector(list(x)) for x in list(obj.bound_box)]
+            # print(f"bbox: {bounds}")
+            min_bound = reduce(lambda x,y: x if x[0] < y[0] or x[1] < y[1] or x[2] < y[2] else y, bounds)
+            # print(f"min_bound: {min_bound}")
+            max_bound = reduce(lambda x,y: x if x[0] > y[0] or x[1] > y[1] or x[2] > y[2] else y, bounds)
+            # print(f"max_bound: {max_bound}")
+
+            centroid = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
+            # print(f"centroid: {centroid}")
+            mesh = obj.to_mesh()
+            # we need the triangles
+            mesh.calc_loop_triangles()
+            tris = list(mesh.loop_triangles)
+            points = []
+            for v in mesh.vertices:
+                points.append(v.co)
+
+            colors = []
+            if mesh.vertex_colors.active is None:
+                print("I cannot find the vertex colors. You get white")
+                colors = [[1, 1, 1, 1] for x in range(0, len(tris))]
+            else:
+                colors = mesh.vertex_colors.active.data
+
+            polys = []
+            for p in mesh.polygons:
+                start = p.loop_start
+                end = p.loop_start + p.loop_total
+                poly_tris = [x for x in tris if x.polygon_index == p.index]
+                color = [math.floor(x * 255) for x in list(colors[p.loop_start].color)]
+                rgb = ((color[0] & 0x0ff) << 16) | ((color[1] & 0x0ff) << 8) | (color[2] & 0x0ff)
+                polys.append({
+                    "color": rgb,
+                    "normal": list(p.normal),
+                    "tris": [list(t.vertices) for t in poly_tris]
+                })
+
+            out = {
+                'points': [list(p) for p in points],
+                'bounds': {
+                    'min': list(min_bound),
+                    'max': list(max_bound),
+                },
+                'center': list(centroid),
+                'radius1': 1.0,
+                'radius2': (max_bound - min_bound).length / 2,
+                'polys': polys,
+            }
+            # print(out)
+            fn = re.sub(r'\/(\w+)\.avarabsp\.json', f"/\g<1>_{obj.name}.avarabsp.json", filepath)
+
+            print(f"writing {fn}")
+            with open(fn, "w") as f:
+                json.dump(out, f)
+
+    return {'FINISHED'}
 
 if __name__ == "__main__":
     register()
