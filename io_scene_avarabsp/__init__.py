@@ -5,6 +5,7 @@ avarabsp
 import bpy
 from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty
 from bpy_extras.io_utils import ExportHelper
+from . import export_avarabsp
 
 bl_info = {  # pylint: disable=invalid-name
     "name": "Avarabsp Exporter",
@@ -39,21 +40,7 @@ class ExportAvarabsp(bpy.types.Operator, ExportHelper):
             if not self.filepath:
                 raise Exception("filepath not set")
 
-            #print(dir(context.scene))
-            #print("======================")
-            #print(dir(context.object))
-            #print("======================")
-            #print(dir(context.object.data))
-            print(context.object.data.vertices.items())
-
-            for key, value in bpy.data.meshes.items():
-                print(f"export the {key}")
-                for v in value.vertices:
-                    print(v.co)
-                    print(v.normal)
-
-            #return export_godot.save(self, context)
-            return {'FINISHED'}
+            return export_avarabsp.save(self, context)
         except:
             self.report({'ERROR'}, "failed")
             return {'CANCELLED'}
