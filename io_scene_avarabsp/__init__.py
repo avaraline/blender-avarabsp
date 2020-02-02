@@ -74,10 +74,10 @@ def save(filepath, context):
             print(f"export the {key}")
             bounds = [Vector(list(x)) for x in list(obj.bound_box)]
             # print(f"bbox: {bounds}")
-            min_bound = reduce(lambda x,y: x if x[0] < y[0] or x[1] < y[1] or x[2] < y[2] else y, bounds)
-            # print(f"min_bound: {min_bound}")
-            max_bound = reduce(lambda x,y: x if x[0] > y[0] or x[1] > y[1] or x[2] > y[2] else y, bounds)
-            # print(f"max_bound: {max_bound}")
+            min_bound = reduce(lambda x,y: x if sum(map(lambda v: v[0] < v[1], zip(x, y))) else y, bounds)
+            print(f"min_bound: {min_bound}")
+            max_bound = reduce(lambda x,y: x if sum(map(lambda v: v[0] > v[1], zip(x, y)))  else y, bounds)
+            print(f"max_bound: {max_bound}")
 
             centroid = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
             # print(f"centroid: {centroid}")
