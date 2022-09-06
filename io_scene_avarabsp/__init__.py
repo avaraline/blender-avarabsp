@@ -25,13 +25,13 @@ bl_info = {  # pylint: disable=invalid-name
 
 
 class ExportAvarabsp(bpy.types.Operator, ExportHelper):
-    """Selection to Godot"""
+    """Selection to Avara BSP JSON"""
     bl_idname = "export_avarabsp.json"
     bl_label = "Export to Avarabsp"
     bl_options = {"PRESET"}
 
-    filename_ext = ".avarabsp.json"
-    filter_glob: StringProperty(default="*.avarabsp.json", options={"HIDDEN"})
+    filename_ext = ".json"
+    filter_glob: StringProperty(default="*.json", options={"HIDDEN"})
 
     @property
     def check_extension(self):
@@ -52,7 +52,7 @@ class ExportAvarabsp(bpy.types.Operator, ExportHelper):
 
 def menu_func(self, context):
     """Add to the menu"""
-    self.layout.operator(ExportAvarabsp.bl_idname, text="Avarabsp (.avarabsp.json)")
+    self.layout.operator(ExportAvarabsp.bl_idname, text="Avarabsp (.json)")
 
 
 def register():
@@ -72,7 +72,7 @@ def save(filepath, context):
     for key, obj in bpy.data.objects.items():
         if obj.type == "MESH":
             # print(out)
-            fn = re.sub(r'\/(\w+)\.avarabsp\.json', f"/\g<1>_{obj.name}.avarabsp.json", filepath)
+            fn = re.sub(r'\/(\w+)\.json', f"/\g<1>_{obj.name}.json", filepath)
 
             print(f"writing {fn}")
             with open(fn, "w") as f:
@@ -102,7 +102,7 @@ def obj_to_json(key, obj):
     colors = []
     if mesh.vertex_colors.active is None:
         print("I cannot find the vertex colors. You get white")
-        colors = [[1, 1, 1, 1] for x in range(0, len(tris))]
+        colors = [{"color": [1, 1, 1, 1]} for x in range(0, sum([p.loop_total for p in mesh.polygons]))]
     else:
         colors = mesh.vertex_colors.active.data
 
