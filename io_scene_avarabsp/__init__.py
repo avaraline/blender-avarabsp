@@ -181,18 +181,20 @@ class ExportAvarabsp(bpy.types.Operator, ExportHelper):
             a_vert_idx = poly.vertices[0]
             c_idx = 0
             if cattribs != 0:
-                color = list(cattribs.data[a_vert_idx].color)
+                color = Color()
+                color.rgb = list(cattribs.data[a_vert_idx].color)[:-1]
                 c_idx = len(colors)
-                if color in colors:
-                    c_idx = colors.index(color)
+                if color.hex in colors:
+                    c_idx = colors.index(color.hex)
                 else:
-                    colors.append(color)
+                    colors.append(color.hex)
             # tris will be added later
             polys.append({
                 "back": 65535,
                 "front": 65535,
                 "color": c_idx,
                 "normal": n_idx,
+                "vis": 1,
                 "tris": []
             })
         # fill out the polys with triangles
